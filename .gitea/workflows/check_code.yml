@@ -11,4 +11,4 @@ jobs:
   check-code:
     uses: actions/workflows/.gitea/workflows/check_python_hatch.yml@master
     with:
-      run-tests: false
+      run-tests: true

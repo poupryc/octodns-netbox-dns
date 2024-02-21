@@ -57,6 +57,9 @@ check:
 build:
     hatch build --clean
 
+test:
+    hatch run default:test
+
 up:
     docker compose -f dev/compose.yml up
 

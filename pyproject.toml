@@ -50,6 +50,8 @@ python = "3.11"
 dependencies = [
     "pytest==7.4.4",
     "coverage==7.4.2",
+    "octodns==1.4.0",
+    "octodns-spf==0.0.2",
 ]
 
 [tool.hatch.envs.default.scripts]
