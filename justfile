@@ -46,9 +46,9 @@ lint:
     hatch run lint:style
     hatch run lint:typing
 
-format:
+format *args:
     just show_system_info
-    hatch run lint:fmt
+    hatch run lint:fmt {{ args }}
 
 check:
     just lint
@@ -71,11 +71,11 @@ clean:
     rm -rf dev/redis-data/*
     rm -rf dev/netbox-data/*
 
-sync *flags:
-    cd dev && octodns-sync --debug --config-file sync.yml --force {{ flags }}
+sync *args:
+    hatch -v run default:sync {{ args }}
 
-dump *flags:
-    cd dev && octodns-dump --debug --config-file sync.yml --output-dir output {{ flags }} '*' netbox
+dump *args:
+    hatch -v run default:dump {{ args }}
 
-validate *flags:
-    cd dev && octodns-validate --debug --config-file sync.yml {{ flags }}
+validate *args:
+    hatch -v run default:validate {{ args }}

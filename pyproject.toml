@@ -60,6 +60,10 @@ test-cov = ["coverage erase", "coverage run -m pytest {args:tests}"]
 cov-report = ["- coverage combine", "coverage report", "coverage xml"]
 cov = ["test-cov", "cov-report"]
 
+sync = ["cd dev && octodns-sync --debug --config-file sync.yml --force {args}"]
+dump = ["cd dev && octodns-dump --debug --config-file sync.yml --output-dir output {args} '*' netbox"]
+validate = ["cd dev && octodns-validate --debug --config-file sync.yml {args}"]
+
 [tool.hatch.envs.lint]
 python = "3.11"
 detached = true
@@ -108,6 +112,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
+    "dev"
 ]
 
 [tool.ruff.lint]
