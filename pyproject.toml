@@ -35,22 +35,21 @@ source = "regex_commit"
 path = "src/octodns_netbox_dns/__about__.py"
 tag_sign = false
 
-[tool.hatch.build]
-ignore-vcs = true
-
 [tool.hatch.build.targets.sdist]
 packages = ["src/octodns_netbox_dns"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/octodns_netbox_dns"]
 
+###
 ### envs
+###
 
 [tool.hatch.envs.default]
 python = "3.11"
 dependencies = [
-    "pytest==7.4.3",
-    "coverage==7.3.2",
+    "pytest==7.4.4",
+    "coverage==7.4.2",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -63,17 +62,26 @@ cov = ["test-cov", "cov-report"]
 python = "3.11"
 detached = true
 dependencies = [
-    "mypy==1.7.1",
-    "ruff==0.1.7",
+    "mypy==1.8.0",
+    "ruff==0.2.2",
 ]
 
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --non-interactive --install-types {args:src/octodns_netbox_dns}"
-style = ["ruff check --diff {args:.}", "ruff format --check --diff {args:.}"]
-fmt = ["ruff format {args:.}", "ruff check --fix {args:.}", "style"]
+style = [
+    "ruff check --diff {args:.}",
+    "ruff format --check --diff {args:.}"
+]
+fmt = [
+    "ruff check --fix {args:.}",
+    "ruff format {args:.}",
+    "style"
+]
 all = ["style", "typing"]
 
+###
 ### ruff
+###
 
 [tool.ruff]
 target-version = "py311"
@@ -81,7 +89,6 @@ line-length = 100
 indent-width = 4
 fix = true
 show-fixes = true
-ignore-init-module-imports = true
 respect-gitignore = true
 src = ["src", "tests"]
 exclude = [
@@ -129,6 +136,7 @@ select = [
     "W",
     "YTT",
 ]
+ignore-init-module-imports = true
 ignore = ["E501", "D103", "D100", "D102", "PLR2004", "D403", "ISC001", "FBT001", "FBT002", "FBT003"]
 unfixable = ["F401"]
 
@@ -137,39 +145,42 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "lf"
+docstring-code-format = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["D104"]
 "__about__.py" = ["D104", "F841"]
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 
-[tool.ruff.pyupgrade]
+[tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 lines-after-imports = 2
 known-first-party = ["octodns_netbox_dns"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.pylint]
+[tool.ruff.lint.pylint]
 max-branches = 24
 max-returns = 12
 max-statements = 100
 max-args = 15
 allow-magic-value-types = ["str", "bytes", "complex", "float", "int"]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 15
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.pycodestyle]
+[tool.ruff.lint.pycodestyle]
 max-doc-length = 100
 
+###
 ### mypy
+###
 
 [tool.mypy]
 #plugins = ["pydantic.mypy"]
@@ -191,16 +202,20 @@ show_error_context = true
 #init_typed = true
 #warn_required_dynamic_aliases = true
 
+###
 ### pytest
+###
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = "--color=yes --exitfirst --verbose -ra"
-#addopts = "--color=yes --exitfirst --verbose -ra --capture=tee-sys"
 filterwarnings = [
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning',
 ]
 
+###
 ### coverage
+###
 
 [tool.coverage.run]
 source_pkgs = ["octodns_netbox_dns", "tests"]
@@ -209,8 +224,8 @@ parallel = true
 omit = ["src/octodns_netbox_dns/__about__.py"]
 
 [tool.coverage.paths]
-testproj = ["src/octodns_netbox_dns", "*/octodns_netbox_dns/src/octodns_netbox_dns"]
-tests = ["tests", "*/octodns_netbox_dns/tests"]
+octodns_netbox_dns = ["src/octodns_netbox_dns", "*/octodns-netbox-dns/src/octodns_netbox_dns"]
+tests = ["tests", "*/octodns-netbox-dns/tests"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration

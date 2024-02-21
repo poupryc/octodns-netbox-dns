@@ -9,7 +9,12 @@ venv
 .ruff_cache/
 __pycache__/
 .pytest_cache/
-.pytest_cache&
+
+# dev
+dev/db-data
+dev/redis-data
+dev/netbox-data
+dev/output
 
 ### Python template
 # Byte-compiled / optimized / DLL files

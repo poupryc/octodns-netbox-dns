@@ -1,0 +1,17 @@
+---
+? ''
+  :
+  ttl: 172800
+  type: NS
+  values:
+    - ns1.example.com.
+    - ns2.example.com.
+record1:
+  type: CNAME
+  value: record11.test.example.com.
+record11:
+  type: A
+  value: 192.168.1.11
+record12:
+  type: A
+  value: 192.168.1.12

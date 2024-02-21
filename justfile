@@ -51,8 +51,28 @@ format:
     hatch run lint:fmt
 
 check:
-    just format
     just lint
+    just format
 
 build:
     hatch build --clean
+
+up:
+    docker compose -f dev/compose.yml up
+
+down:
+    docker compose -f dev/compose.yml down
+
+clean:
+    rm -rf dev/db-data/*
+    rm -rf dev/redis-data/*
+    rm -rf dev/netbox-data/*
+
+sync *flags:
+    cd dev && octodns-sync --debug --config-file sync.yml --force {{ flags }}
+
+dump *flags:
+    cd dev && octodns-dump --debug --config-file sync.yml --output-dir output {{ flags }} '*' netbox
+
+validate *flags:
+    cd dev && octodns-validate --debug --config-file sync.yml {{ flags }}

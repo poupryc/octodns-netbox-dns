@@ -1,0 +1,66 @@
+services:
+  app:
+    image: netbox-dev:build
+    container_name: netbox-dev-app
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    build:
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - redis
+    networks:
+      - appnet
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./netbox-data/:/config/:rw
+      - ./configuration.py:/config/configuration.py:ro
+    environment:
+      - TZ=Europe/Zurich
+      - PUID=${UID}
+      - PGID=${GID}
+      - DB_HOST=netbox-dev-db
+      - DB_NAME=netbox
+      - DB_USER=netbox
+      - DB_PASSWORD=netbox-dev
+      - REDIS_HOST=netbox-dev-redis
+      - SUPERUSER_EMAIL=admin@example.com
+      - SUPERUSER_PASSWORD=netbox-dev
+
+  db:
+    image: bitnami/postgresql:14.9.0
+    container_name: netbox-dev-db
+    restart: unless-stopped
+    user: ${UID}
+    security_opt: ["no-new-privileges:true"]
+    networks:
+      - appnet
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./db-data/:/bitnami/postgresql/:rw
+    environment:
+      - TZ=Europe/Zurich
+      - POSTGRESQL_POSTGRES_PASSWORD=netbox-dev
+      - POSTGRES_DB=netbox
+      - POSTGRES_USER=netbox
+      - POSTGRES_PASSWORD=netbox-dev
+
+  redis:
+    image: bitnami/redis:7.2
+    container_name: netbox-dev-redis
+    restart: unless-stopped
+    user: ${UID}
+    security_opt: ["no-new-privileges:true"]
+    networks:
+      - appnet
+    volumes:
+      - ./redis-data/:/bitnami/redis/data/:rw
+    environment:
+      - TZ=Europe/Zurich
+      - ALLOW_EMPTY_PASSWORD=yes
+
+networks:
+  appnet:
+    name: netbox-dev
+    driver: bridge
