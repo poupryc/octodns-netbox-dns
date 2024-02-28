@@ -4,7 +4,7 @@
   type: NS
   values:
   - ns1.example.com.
-  - ns2.example.com.
+  - ns3.example.com.
 ns1:
   type: A
   value: 192.168.1.1
@@ -20,3 +20,6 @@ record11:
 record12:
   type: A
   value: 192.168.1.12
+x._domainkey:
+  type: TXT
+  value: v=DKIM1\; k=rsa\; p=MIIBIjANBgkasdasdasIIBCgKCAQEAq7OOAhfjaOKMSiJR8xkG+sadasdasd+OiWdZEZ7T4blBQxuWTNGoaG1CKOFeJSf72JAlqxF++z2CB4ypdUOoRNn96KlcpI2LBmoW1c7ZzFzqPvgCs+EzaOnt5S2FH2njHb15+atdE8cuZ7+MGmHf5HSD/asdasdasdasdasdadadasd+2Chr68t4wc+qPrUIGM3JnOhzKyiK6FfQXVwoDTxwmKTE2EzhPAQjlCHrRLaynDqiGjXjZcqoF9UEB5cBGw+asdasdasdasdas/dwIDAQAB

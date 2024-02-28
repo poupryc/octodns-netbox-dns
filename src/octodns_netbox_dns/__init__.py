@@ -10,7 +10,7 @@ import pynetbox.core.api
 import pynetbox.core.response
 
 
-class NetBoxDNSSource(octodns.provider.base.BaseProvider):
+class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
     """OctoDNS provider for NetboxDNS"""
 
     SUPPORTS_GEO = False
@@ -57,12 +57,15 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
         ttl=3600,
         replace_duplicates=False,
         make_absolute=False,
+        disable_ptr=True,
         *args,
         **kwargs,
     ):
         """initialize the NetboxDNSSource"""
         self.log = logging.getLogger(f"NetboxDNSSource[{id}]")
-        self.log.debug(f"__init__: {id=}, {url=}, {view=}, {replace_duplicates=}, {make_absolute=}")
+        self.log.debug(
+            f"__init__: {id=}, {url=}, {view=}, {replace_duplicates=}, {make_absolute=}, {disable_ptr=}, {args=}, {kwargs=}"
+        )
         super().__init__(id, *args, **kwargs)
 
         self.api = pynetbox.core.api.Api(url, token)
@@ -70,6 +73,7 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
         self.ttl = ttl
         self.replace_duplicates = replace_duplicates
         self.make_absolute = make_absolute
+        self.disable_ptr = disable_ptr
 
     def _make_absolute(self, value: str) -> str:
         """return dns name with trailing dot to make it absolute
@@ -253,8 +257,6 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                 rcd_value = self._format_rdata(nb_record, raw_value)
             except NotImplementedError:
                 continue
-            except Exception as exc:
-                raise exc
 
             if (rcd_name, rcd_type) not in records:
                 records[(rcd_name, rcd_type)] = rcd_data
@@ -284,9 +286,6 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
         for data in records:
             if len(data["values"]) == 1:
                 data["value"] = data.pop("values")[0]
-            if target and data["type"] in ["NS", "SOA", "PTR"]:
-                self.log.debug(f"{data['type']} type not supported in target mode")
-                continue
             record = octodns.record.Record.new(
                 zone=zone,
                 name=data["name"],
@@ -318,20 +317,26 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
 
         return changeset
 
-    @staticmethod
-    def _include_change(change: octodns.record.change.Change) -> bool:
+    def _include_change(self, change: octodns.record.change.Change) -> bool:
         """filter out record types which the provider can't create in netbox
+
         @param change: the planned change
 
         @return: false if the change should be discarded, true if it should be kept.
         """
         if change.record._type in ["SOA", "PTR", "NS"]:
+            self.log.debug(f"record not supported as provider, ignoring: {change.record}")
             return False
 
         return True
 
     def _apply(self, plan: octodns.provider.plan.Plan) -> None:
-        """apply the changes to the NetBox DNS zone."""
+        """apply the changes to the NetBox DNS zone.
+
+        @param plan: the planned changes
+
+        @return: none
+        """
         self.log.debug(f"_apply: zone={plan.desired.name}, changes={len(plan.changes)}")
 
         nb_zone = self._get_nb_zone(plan.desired.name, view=self.nb_view)
@@ -350,10 +355,10 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                                 type=change.new._type,
                                 ttl=change.new.ttl,
                                 value=record.replace("\\\\", "\\").replace("\\;", ";"),
-                                disable_ptr=True,
+                                disable_ptr=self.disable_ptr,
                             )
                         )
-                        self.log.debug(f"{nb_record!r}")
+                        self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")
 
                 case octodns.record.Delete():
                     nb_records: pynetbox.core.response.RecordSet = (
@@ -367,12 +372,12 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                     existing_changeset = self._format_changeset(change.existing)
                     for nb_record in nb_records:
                         for record in existing_changeset:
-                            if nb_record.value == record:
-                                self.log.debug(
-                                    f"{nb_record.id} {nb_record.name} {nb_record.type} {nb_record.value} {record}"
-                                )
-                                self.log.debug(f"{nb_record.url} {nb_record.endpoint.url}")
-                                nb_record.delete()
+                            if nb_record.value != record:
+                                continue
+                            self.log.debug(
+                                f"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
+                            )
+                            nb_record.delete()
 
                 case octodns.record.Update():
                     rcd_name = "@" if change.existing.name == "" else change.existing.name
@@ -392,9 +397,15 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
 
                     for nb_record in nb_records:
                         if nb_record.value in to_delete:
+                            self.log.debug(
+                                f"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
+                            )
                             nb_record.delete()
                         if nb_record.value in to_update:
                             nb_record.ttl = change.new.ttl
+                            self.log.debug(
+                                f"MODIFY {nb_record.type} {nb_record.name} {nb_record.value}"
+                            )
                             nb_record.save()
 
                     for record in to_create:
@@ -404,6 +415,6 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                             type=change.new._type,
                             ttl=change.new.ttl,
                             value=record.replace("\\\\", "\\").replace("\\;", ";"),
-                            disable_ptr=True,
+                            disable_ptr=self.disable_ptr,
                         )
-                        self.log.debug(f"{nb_record!r}")
+                        self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")

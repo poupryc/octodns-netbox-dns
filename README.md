@@ -1,4 +1,4 @@
-# netbox-plugin-dns source for octodns
+# netbox-plugin-dns provider for octodns
 
 > works with https://github.com/peteeckel/netbox-plugin-dns
 
@@ -7,7 +7,7 @@
 ```yml
 providers:
     config:
-        class: octodns_netbox_dns.NetBoxDNSSource
+        class: octodns_netbox_dns.NetBoxDNSProvider
         # Netbox url
         # [mandatory, default=null]
         url: "https://some-url"
@@ -27,7 +27,18 @@ providers:
         # Make CNAME, MX and SRV records absolute if they are missing the trailing "."
         # [optional, default=false]
         make_absolute: false
+        # Disable automatic PTR record creating in the NetboxDNS plugin.
+        # [optional, default=true]
+        disable_ptr: true
 ```
+
+## compatibility
+
+> actively tested on the newest netbox-plugin-dns and netbox versions
+
+| provider    | [netbox-plugin-dns](https://github.com/peteeckel/netbox-plugin-dns) | [netbox](https://github.com/netbox-community/netbox) |
+|-------------|---------------------------------------------------------------------|------------------------------------------------------|
+| `>= v0.3.3` | `>=0.21.0`                                                          | `>=3.6.0`                                            |
 
 ## install
 
