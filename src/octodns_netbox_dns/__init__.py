@@ -339,17 +339,17 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
         for change in plan.changes:
             match change:
                 case octodns.record.Create():
-                    name = "@" if change.new.name == "" else change.new.name
+                    rcd_name = "@" if change.new.name == "" else change.new.name
 
-                    new = self._format_changeset(change.new)
-                    for value in new:
+                    new_changeset = self._format_changeset(change.new)
+                    for record in new_changeset:
                         nb_record: pynetbox.core.response.Record = (
                             self.api.plugins.netbox_dns.records.create(
                                 zone=nb_zone.id,
-                                name=name,
+                                name=rcd_name,
                                 type=change.new._type,
                                 ttl=change.new.ttl,
-                                value=value.replace("\\\\", "\\").replace("\\;", ";"),
+                                value=record.replace("\\\\", "\\").replace("\\;", ";"),
                                 disable_ptr=True,
                             )
                         )
@@ -364,49 +364,49 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                         )
                     )
 
-                    existing = self._format_changeset(change.existing)
+                    existing_changeset = self._format_changeset(change.existing)
                     for nb_record in nb_records:
-                        for value in existing:
-                            if nb_record.value == value:
+                        for record in existing_changeset:
+                            if nb_record.value == record:
                                 self.log.debug(
-                                    f"{nb_record.id} {nb_record.name} {nb_record.type} {nb_record.value} {value}"
+                                    f"{nb_record.id} {nb_record.name} {nb_record.type} {nb_record.value} {record}"
                                 )
                                 self.log.debug(f"{nb_record.url} {nb_record.endpoint.url}")
                                 nb_record.delete()
 
                 case octodns.record.Update():
-                    name = "@" if change.existing.name == "" else change.existing.name
+                    rcd_name = "@" if change.existing.name == "" else change.existing.name
 
                     nb_records: pynetbox.core.response.RecordSet = (
                         self.api.plugins.netbox_dns.records.filter(
                             zone_id=nb_zone.id,
-                            name=name,
+                            name=rcd_name,
                             type=change.existing._type,
                         )
                     )
 
-                    existing = self._format_changeset(change.existing)
-                    new = self._format_changeset(change.new)
+                    existing_changeset = self._format_changeset(change.existing)
+                    new_changeset = self._format_changeset(change.new)
 
-                    delete = existing.difference(new)
-                    update = existing.intersection(new)
-                    create = new.difference(existing)
+                    to_delete = existing_changeset.difference(new_changeset)
+                    to_update = existing_changeset.intersection(new_changeset)
+                    to_create = new_changeset.difference(existing_changeset)
 
                     for nb_record in nb_records:
-                        if nb_record.value in delete:
+                        if nb_record.value in to_delete:
                             nb_record.delete()
-                        if nb_record.value in update:
+                        if nb_record.value in to_update:
                             nb_record.ttl = change.new.ttl
                             nb_record.save()
 
-                    for value in create:
+                    for record in to_create:
                         nb_record: pynetbox.core.response.Record = (
                             self.api.plugins.netbox_dns.records.create(
                                 zone=nb_zone.id,
-                                name=name,
+                                name=rcd_name,
                                 type=change.new._type,
                                 ttl=change.new.ttl,
-                                value=value.replace("\\\\", "\\").replace("\\;", ";"),
+                                value=record.replace("\\\\", "\\").replace("\\;", ";"),
                                 disable_ptr=True,
                             )
                         )
