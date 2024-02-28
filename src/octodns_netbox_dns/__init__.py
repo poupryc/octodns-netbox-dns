@@ -377,12 +377,10 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                 case octodns.record.Update():
                     rcd_name = "@" if change.existing.name == "" else change.existing.name
 
-                    nb_records: pynetbox.core.response.RecordSet = (
-                        self.api.plugins.netbox_dns.records.filter(
-                            zone_id=nb_zone.id,
-                            name=rcd_name,
-                            type=change.existing._type,
-                        )
+                    nb_records = self.api.plugins.netbox_dns.records.filter(
+                        zone_id=nb_zone.id,
+                        name=rcd_name,
+                        type=change.existing._type,
                     )
 
                     existing_changeset = self._format_changeset(change.existing)
@@ -400,14 +398,12 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                             nb_record.save()
 
                     for record in to_create:
-                        nb_record: pynetbox.core.response.Record = (
-                            self.api.plugins.netbox_dns.records.create(
-                                zone=nb_zone.id,
-                                name=rcd_name,
-                                type=change.new._type,
-                                ttl=change.new.ttl,
-                                value=record.replace("\\\\", "\\").replace("\\;", ";"),
-                                disable_ptr=True,
-                            )
+                        nb_record = self.api.plugins.netbox_dns.records.create(
+                            zone=nb_zone.id,
+                            name=rcd_name,
+                            type=change.new._type,
+                            ttl=change.new.ttl,
+                            value=record.replace("\\\\", "\\").replace("\\;", ";"),
+                            disable_ptr=True,
                         )
                         self.log.debug(f"{nb_record!r}")
