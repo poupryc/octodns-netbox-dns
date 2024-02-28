@@ -60,7 +60,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         disable_ptr=True,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         """initialize the NetboxDNSSource"""
         self.log = logging.getLogger(f"NetboxDNSSource[{id}]")
         self.log.debug(
