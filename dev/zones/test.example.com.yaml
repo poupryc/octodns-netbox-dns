@@ -1,11 +1,10 @@
 ---
 ? ''
-  :
-  ttl: 172800
+: ttl: 172800
   type: NS
   values:
-    - ns1.example.com.
-    - ns2.example.com.
+  - ns1.example.com.
+  - ns2.example.com.
 record1:
   type: CNAME
   value: record11.test.example.com.

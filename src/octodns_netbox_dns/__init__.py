@@ -125,14 +125,17 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
 
         return nb_zone
 
-    def _format_rdata(self, rdata: dns.rdata.Rdata, raw_value: str) -> str | dict[str, Any]:
+    def _format_rdata(
+        self, nb_record: pynetbox.core.response.Record, raw_value: str
+    ) -> str | dict[str, Any]:
         """format netbox record values to correct octodns record values
 
-        @param rdata: rrdata record value
+        @param nb_record: netbox record
         @param raw_value: raw record value
 
         @return: formatted rrdata value
         """
+        rdata = dns.rdata.from_text("IN", nb_record.type, raw_value)
         match rdata.rdtype.name:
             case "A" | "AAAA":
                 value = rdata.address
@@ -246,9 +249,8 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
 
             self.log.debug(f"record data={rcd_data}")
 
-            rdata = dns.rdata.from_text("IN", nb_record.type, raw_value)
             try:
-                rcd_value = self._format_rdata(rdata, raw_value)
+                rcd_value = self._format_rdata(nb_record, raw_value)
             except NotImplementedError:
                 continue
             except Exception as exc:
@@ -299,7 +301,7 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
         return True
 
     @staticmethod
-    def __format_changeset(change: Any) -> set[str]:
+    def _format_changeset(change: Any) -> set[str]:
         """format the changeset
 
         @param change: the raw changes
@@ -323,23 +325,23 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
 
         @return: false if the change should be discarded, true if it should be kept.
         """
-        if change.new._type in ["SOA", "PTR", "NS"]:
+        if change.record._type in ["SOA", "PTR", "NS"]:
             return False
 
         return True
 
     def _apply(self, plan: octodns.provider.plan.Plan) -> None:
         """apply the changes to the NetBox DNS zone."""
-        self.log.debug(f"_apply: zone={plan.desired.name}, len(changes)={len(plan.changes)}")
+        self.log.debug(f"_apply: zone={plan.desired.name}, changes={len(plan.changes)}")
 
         nb_zone = self._get_nb_zone(plan.desired.name, view=self.nb_view)
 
         for change in plan.changes:
             match change:
                 case octodns.record.Create():
-                    name = "@" if change.name.name == "" else change.name.name
+                    name = "@" if change.new.name == "" else change.new.name
 
-                    new = self.__format_changeset(change.new)
+                    new = self._format_changeset(change.new)
                     for value in new:
                         nb_record: pynetbox.core.response.Record = (
                             self.api.plugins.netbox_dns.records.create(
@@ -354,8 +356,6 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                         self.log.debug(f"{nb_record!r}")
 
                 case octodns.record.Delete():
-                    name = "@" if change.existing.name == "" else change.existing.name
-
                     nb_records: pynetbox.core.response.RecordSet = (
                         self.api.plugins.netbox_dns.records.filter(
                             zone_id=nb_zone.id,
@@ -364,7 +364,7 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                         )
                     )
 
-                    existing = self.__format_changeset(change.existing)
+                    existing = self._format_changeset(change.existing)
                     for nb_record in nb_records:
                         for value in existing:
                             if nb_record.value == value:
@@ -385,8 +385,8 @@ class NetBoxDNSSource(octodns.provider.base.BaseProvider):
                         )
                     )
 
-                    existing = self.__format_changeset(change.existing)
-                    new = self.__format_changeset(change.new)
+                    existing = self._format_changeset(change.existing)
+                    new = self._format_changeset(change.new)
 
                     delete = existing.difference(new)
                     update = existing.intersection(new)
