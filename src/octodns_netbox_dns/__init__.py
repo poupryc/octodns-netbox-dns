@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Any, Literal
 
 import dns.rdata
@@ -129,17 +130,15 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         return nb_zone
 
-    def _format_rdata(
-        self, nb_record: pynetbox.core.response.Record, raw_value: str
-    ) -> str | dict[str, Any]:
+    def _format_rdata(self, rcd_type: str, rcd_value: str) -> str | dict[str, Any]:
         """format netbox record values to correct octodns record values
 
-        @param nb_record: netbox record
-        @param raw_value: raw record value
+        @param rcd_type: record type
+        @param rcd_value: record value
 
         @return: formatted rrdata value
         """
-        rdata = dns.rdata.from_text("IN", nb_record.type, raw_value)
+        rdata = dns.rdata.from_text("IN", rcd_type, rcd_value)
         match rdata.rdtype.name:
             case "A" | "AAAA":
                 value = rdata.address
@@ -197,7 +196,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 }
 
             case "SPF" | "TXT":
-                value = raw_value.replace(";", "\\;")
+                value = re.sub(r"\\*;", "\\;", rcd_value)
 
             case "SRV":
                 value = {
@@ -238,7 +237,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         )
         for nb_record in nb_records:
             rcd_name: str = nb_record.name if nb_record.name != "@" else ""
-            raw_value: str = nb_record.value if nb_record.value != "@" else nb_record.zone.name
+            rcd_value: str = nb_record.value if nb_record.value != "@" else nb_record.zone.name
             rcd_type: str = nb_record.type
             rcd_ttl: int = nb_record.ttl or nb_zone.default_ttl
             if nb_record.type == "NS":
@@ -254,14 +253,14 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
             self.log.debug(f"record data={rcd_data}")
 
             try:
-                rcd_value = self._format_rdata(nb_record, raw_value)
+                rcd_rdata = self._format_rdata(nb_record, rcd_value)
             except NotImplementedError:
                 continue
 
             if (rcd_name, rcd_type) not in records:
                 records[(rcd_name, rcd_type)] = rcd_data
 
-            records[(rcd_name, rcd_type)]["values"].append(rcd_value)
+            records[(rcd_name, rcd_type)]["values"].append(rcd_rdata)
 
         return list(records.values())
 
@@ -354,7 +353,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                                 name=rcd_name,
                                 type=change.new._type,
                                 ttl=change.new.ttl,
-                                value=record.replace("\\\\", "\\").replace("\\;", ";"),
+                                value=re.sub(r"\\*;", ";", record),
                                 disable_ptr=self.disable_ptr,
                             )
                         )
@@ -414,7 +413,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=record.replace("\\\\", "\\").replace("\\;", ";"),
+                            value=re.sub(r"\\*;", ";", record),
                             disable_ptr=self.disable_ptr,
                         )
                         self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")
