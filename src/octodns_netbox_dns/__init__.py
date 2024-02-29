@@ -339,6 +339,11 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         return True
 
+    def _unescape_for_netbox(self, rcd_type: str, value: str) -> str:
+        if rcd_type not in ["TXT", "SPF"]:
+            return value
+        return self._unescape_semicolon(value)
+
     def _apply(self, plan: octodns.provider.plan.Plan) -> None:
         """apply the changes to the NetBox DNS zone.
 
@@ -363,7 +368,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=self._unescape_semicolon(record),
+                            value=self._unescape_for_netbox(change.new._type, record),
                             disable_ptr=self.disable_ptr,
                         )
 
@@ -422,6 +427,6 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=self._unescape_semicolon(record),
+                            value=self._unescape_for_netbox(change.new._type, record),
                             disable_ptr=self.disable_ptr,
                         )
