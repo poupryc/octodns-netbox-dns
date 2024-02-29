@@ -1,4 +1,4 @@
-from octodns_netbox_dns import NetBoxDNSSource
+from octodns_netbox_dns import NetBoxDNSProvider
 
 
 DEFAULT_CONFIG = {
@@ -11,16 +11,16 @@ DEFAULT_CONFIG = {
 }
 
 
-def test_absolute1():
-    nbdns = NetBoxDNSSource(**DEFAULT_CONFIG)
+def test1():
+    nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd = "example.com"
     absolute = nbdns._make_absolute(rcd)
 
     assert absolute == "example.com."
 
 
-def test_absolute2():
-    nbdns = NetBoxDNSSource(**DEFAULT_CONFIG)
+def test2():
+    nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd = "example.com."
     absolute = nbdns._make_absolute(rcd)
 
