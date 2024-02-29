@@ -92,12 +92,12 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
     def _escape_semicolon(self, value: str) -> str:
         fixed = value.replace(";", "\\;")
-        self.log.debug(f"in='{value}', fixed='{fixed}'")
+        self.log.debug(f"in='{value}', escaped='{fixed}'")
         return fixed
 
     def _unescape_semicolon(self, value: str) -> str:
         fixed = value.replace("\\\\", "\\").replace("\\;", ";")
-        self.log.debug(f"in='{value}', fixed='{fixed}'")
+        self.log.debug(f"in='{value}', unescaped='{fixed}'")
         return fixed
 
     def _get_nb_view(self, view: str | None | Literal[False]) -> dict[str, int | str]:
@@ -357,17 +357,15 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
                     new_changeset = self._format_changeset(change.new)
                     for record in new_changeset:
-                        nb_record: pynetbox.core.response.Record = (
-                            self.api.plugins.netbox_dns.records.create(
-                                zone=nb_zone.id,
-                                name=rcd_name,
-                                type=change.new._type,
-                                ttl=change.new.ttl,
-                                value=self._unescape_semicolon(record),
-                                disable_ptr=self.disable_ptr,
-                            )
+                        self.log.debug(f"ADD {change.new._type} {rcd_name} {record}")
+                        self.api.plugins.netbox_dns.records.create(
+                            zone=nb_zone.id,
+                            name=rcd_name,
+                            type=change.new._type,
+                            ttl=change.new.ttl,
+                            value=self._unescape_semicolon(record),
+                            disable_ptr=self.disable_ptr,
                         )
-                        self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")
 
                 case octodns.record.Delete():
                     nb_records: pynetbox.core.response.RecordSet = (
@@ -411,13 +409,14 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             )
                             nb_record.delete()
                         if nb_record.value in to_update:
-                            nb_record.ttl = change.new.ttl
                             self.log.debug(
                                 f"MODIFY {nb_record.type} {nb_record.name} {nb_record.value}"
                             )
+                            nb_record.ttl = change.new.ttl
                             nb_record.save()
 
                     for record in to_create:
+                        self.log.debug(f"ADD {change.new._type} {rcd_name} {record}")
                         nb_record = self.api.plugins.netbox_dns.records.create(
                             zone=nb_zone.id,
                             name=rcd_name,
@@ -426,4 +425,3 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             value=self._unescape_semicolon(record),
                             disable_ptr=self.disable_ptr,
                         )
-                        self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")
