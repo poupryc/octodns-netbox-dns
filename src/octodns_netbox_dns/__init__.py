@@ -90,21 +90,14 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         return absolute_value
 
-    @staticmethod
-    def _fix_semicolon(value: str, escape: bool) -> str:
-        """escape and un-escape semicolons in record values for netbox/octodns
+    def _escape_semicolon(self, value: str) -> str:
+        fixed = value.replace(";", "\\;")
+        self.log.debug(f"in='{value}', fixed='{fixed}'")
+        return fixed
 
-        @param value: the record value
-        @param escape: if set to true, all semicolons get escaped with a backslash.
-        if false it un-escapes all semicolons.
-
-        @return: the modified record value
-        """
-        if escape:
-            fixed = value.replace(";", "\\;")
-        else:
-            fixed = value.replace("\\;", ";")
-
+    def _unescape_semicolon(self, value: str) -> str:
+        fixed = value.replace("\\\\", "\\").replace("\\;", ";")
+        self.log.debug(f"in='{value}', fixed='{fixed}'")
         return fixed
 
     def _get_nb_view(self, view: str | None | Literal[False]) -> dict[str, int | str]:
@@ -212,7 +205,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 }
 
             case "SPF" | "TXT":
-                value = self._fix_semicolon(rcd_value, escape=True)
+                value = self._escape_semicolon(rcd_value)
 
             case "SRV":
                 value = {
@@ -370,7 +363,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                                 name=rcd_name,
                                 type=change.new._type,
                                 ttl=change.new.ttl,
-                                value=self._fix_semicolon(record, escape=False),
+                                value=self._unescape_semicolon(record),
                                 disable_ptr=self.disable_ptr,
                             )
                         )
@@ -430,7 +423,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=self._fix_semicolon(record, escape=False),
+                            value=self._unescape_semicolon(record),
                             disable_ptr=self.disable_ptr,
                         )
                         self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")

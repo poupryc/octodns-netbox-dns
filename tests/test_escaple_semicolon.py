@@ -14,7 +14,7 @@ DEFAULT_CONFIG = {
 def test_escape1():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
-    value = nbdns._fix_semicolon(rcd_value, escape=True)
+    value = nbdns._escape_semicolon(rcd_value)
 
     assert value == r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
 
@@ -22,7 +22,7 @@ def test_escape1():
 def test_escape2():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
-    value = nbdns._fix_semicolon(rcd_value, escape=True)
+    value = nbdns._escape_semicolon(rcd_value)
 
     assert value == r"v=TLSRPTv1\\; rua=mailto:tlsrpt@example.com"
 
@@ -30,7 +30,7 @@ def test_escape2():
 def test_escape3():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"t=y\;o=~\;"
-    value = nbdns._fix_semicolon(rcd_value, escape=True)
+    value = nbdns._escape_semicolon(rcd_value)
 
     assert value == r"t=y\\;o=~\\;"
 
@@ -38,7 +38,7 @@ def test_escape3():
 def test_escape4():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"t=y;o=~;"
-    value = nbdns._fix_semicolon(rcd_value, escape=True)
+    value = nbdns._escape_semicolon(rcd_value)
 
     assert value == r"t=y\;o=~\;"
 
@@ -46,7 +46,7 @@ def test_escape4():
 def test_unescape1():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
-    value = nbdns._fix_semicolon(rcd_value, escape=False)
+    value = nbdns._unescape_semicolon(rcd_value)
 
     assert value == r"v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
 
@@ -54,22 +54,22 @@ def test_unescape1():
 def test_unescape2():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"v=TLSRPTv1\\; rua=mailto:tlsrpt@example.com"
-    value = nbdns._fix_semicolon(rcd_value, escape=False)
+    value = nbdns._unescape_semicolon(rcd_value)
 
-    assert value == r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
+    assert value == r"v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
 
 
 def test_unescape3():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"t=y\\;o=~\;"
-    value = nbdns._fix_semicolon(rcd_value, escape=False)
+    value = nbdns._unescape_semicolon(rcd_value)
 
-    assert value == r"t=y\;o=~;"
+    assert value == r"t=y;o=~;"
 
 
 def test_unescape4():
     nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
     rcd_value = r"t=y;o=~;"
-    value = nbdns._fix_semicolon(rcd_value, escape=False)
+    value = nbdns._unescape_semicolon(rcd_value)
 
     assert value == r"t=y;o=~;"
