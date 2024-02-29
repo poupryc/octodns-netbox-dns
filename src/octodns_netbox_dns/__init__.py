@@ -91,6 +91,23 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         return absolute_value
 
+    @staticmethod
+    def _fix_semicolon(value: str, escape: bool) -> str:
+        """escape and un-escape semicolons in record values for netbox/octodns
+
+        @param value: the record value
+        @param escape: if set to true, all semicolons get escaped with a backslash.
+        if false it un-escapes all semicolons.
+
+        @return: the modified record value
+        """
+        if escape:
+            value = re.sub(r"\\*;", "\\;", value)
+        else:
+            value = re.sub(r"\\*;", ";", value)
+
+        return value
+
     def _get_nb_view(self, view: str | None | Literal[False]) -> dict[str, int | str]:
         """get the correct netbox view when requested
 
@@ -196,7 +213,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 }
 
             case "SPF" | "TXT":
-                value = re.sub(r"\\*;", "\\;", rcd_value)
+                value = self._fix_semicolon(rcd_value, escape=True)
 
             case "SRV":
                 value = {
@@ -236,8 +253,8 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
             zone_id=nb_zone.id, status="active"
         )
         for nb_record in nb_records:
-            rcd_name: str = nb_record.name if nb_record.name != "@" else ""
-            rcd_value: str = nb_record.value if nb_record.value != "@" else nb_record.zone.name
+            rcd_name: str = "" if nb_record.name == "@" else nb_record.name
+            rcd_value: str = nb_record.zone.name if nb_record.value == "@" else nb_record.value
             rcd_type: str = nb_record.type
             rcd_ttl: int = nb_record.ttl or nb_zone.default_ttl
             if nb_record.type == "NS":
@@ -249,11 +266,10 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 "ttl": rcd_ttl,
                 "values": [],
             }
-
-            self.log.debug(f"record data={rcd_data}")
+            self.log.debug(f"working on record={rcd_data} -> {rcd_value}")
 
             try:
-                rcd_rdata = self._format_rdata(nb_record, rcd_value)
+                rcd_rdata = self._format_rdata(rcd_type, rcd_value)
             except NotImplementedError:
                 continue
 
@@ -261,6 +277,8 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 records[(rcd_name, rcd_type)] = rcd_data
 
             records[(rcd_name, rcd_type)]["values"].append(rcd_rdata)
+
+            self.log.debug(f"record data={records[(rcd_name, rcd_type)]}")
 
         return list(records.values())
 
@@ -353,7 +371,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                                 name=rcd_name,
                                 type=change.new._type,
                                 ttl=change.new.ttl,
-                                value=re.sub(r"\\*;", ";", record),
+                                value=self._fix_semicolon(record, escape=False),
                                 disable_ptr=self.disable_ptr,
                             )
                         )
@@ -413,7 +431,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=re.sub(r"\\*;", ";", record),
+                            value=self._fix_semicolon(record, escape=False),
                             disable_ptr=self.disable_ptr,
                         )
                         self.log.debug(f"ADD {nb_record.type} {nb_record.name} {nb_record.value}")
