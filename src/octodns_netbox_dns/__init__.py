@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Any, Literal
 
 import dns.rdata
@@ -102,11 +101,11 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         @return: the modified record value
         """
         if escape:
-            value = re.sub(r"\\*;", "\\;", value)
+            fixed = value.replace(";", "\\;")
         else:
-            value = re.sub(r"\\*;", ";", value)
+            fixed = value.replace("\\;", ";")
 
-        return value
+        return fixed
 
     def _get_nb_view(self, view: str | None | Literal[False]) -> dict[str, int | str]:
         """get the correct netbox view when requested
