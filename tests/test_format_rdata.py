@@ -56,7 +56,7 @@ def test_txt2():
     rcd_value = r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
     value = nbdns._format_rdata(rcd_type, rcd_value)
 
-    assert value == r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
+    assert value == r"v=TLSRPTv1\\; rua=mailto:tlsrpt@example.com"
 
 
 def test_txt3():
@@ -77,7 +77,7 @@ def test_txt4():
     rcd_value = r"t=y\;o=~\;"
     value = nbdns._format_rdata(rcd_type, rcd_value)
 
-    assert value == r"t=y\;o=~\;"
+    assert value == r"t=y\\;o=~\\;"
 
 
 def test_txt5():
@@ -87,15 +87,6 @@ def test_txt5():
     value = nbdns._format_rdata(rcd_type, rcd_value)
 
     assert value == r"t=y\;o=~\;"
-
-
-def test_txt4():
-    nbdns = NetBoxDNSProvider(**DEFAULT_CONFIG)
-    rcd_type = "TXT"
-    rcd_value = r"v=TLSRPTv1\\; rua=mailto:tlsrpt@example.com"
-    value = nbdns._format_rdata(rcd_type, rcd_value)
-
-    assert value == r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
 
 
 def test_srv():
