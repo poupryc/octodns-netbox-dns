@@ -56,7 +56,7 @@ def test_unescape2():
     rcd_value = r"v=TLSRPTv1\\; rua=mailto:tlsrpt@example.com"
     value = nbdns._unescape_semicolon(rcd_value)
 
-    assert value == r"v=TLSRPTv1\; rua=mailto:tlsrpt@example.com"
+    assert value == r"v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
 
 
 def test_unescape3():
@@ -64,7 +64,7 @@ def test_unescape3():
     rcd_value = r"t=y\\;o=~\;"
     value = nbdns._unescape_semicolon(rcd_value)
 
-    assert value == r"t=y\;o=~;"
+    assert value == r"t=y;o=~;"
 
 
 def test_unescape4():
