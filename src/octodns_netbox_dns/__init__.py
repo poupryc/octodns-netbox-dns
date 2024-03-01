@@ -96,7 +96,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         return fixed
 
     def _unescape_semicolon(self, value: str) -> str:
-        fixed = value.replace(r"\;", ";")
+        fixed = value.replace(r"\\", "\\").replace(r"\;", ";")
         self.log.debug(rf"in='{value}', unescaped='{fixed}'")
         return fixed
 
@@ -317,18 +317,19 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         """
         match change:
             case octodns.record.ValueMixin():
-                changeset = {str(change.value)}
+                changeset = {repr(change.value)[1:-1]}
             case octodns.record.ValuesMixin():
-                changeset = {str(v) for v in change.values}
-
+                changeset = {repr(v)[1:-1] for v in change.values}
             case _:
                 raise ValueError
 
         if change._type not in ["TXT", "SPF"]:
+            self.log.debug(f"{changeset=}")
             return changeset
 
-        escaped_changeset = {self._unescape_semicolon(n) for n in changeset}
-        return escaped_changeset
+        unescaped_changeset = {self._unescape_semicolon(n) for n in changeset}
+        self.log.debug(f"{unescaped_changeset=}")
+        return unescaped_changeset
 
     def _include_change(self, change: octodns.record.change.Change) -> bool:
         """filter out record types which the provider can't create in netbox
@@ -414,7 +415,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             nb_record.delete()
                         if nb_record.value in to_update:
                             self.log.debug(
-                                rf"MODIFY {nb_record.type} {nb_record.name} {nb_record.value}"
+                                rf"MODIFY (ttl) {nb_record.type} {nb_record.name} {nb_record.value}"
                             )
                             nb_record.ttl = change.new.ttl
                             nb_record.save()
