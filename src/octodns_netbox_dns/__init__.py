@@ -91,12 +91,12 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         return absolute_value
 
     def _escape_semicolon(self, value: str) -> str:
-        fixed = value.replace(";", "\\;")
+        fixed = value.replace(";", r"\;")
         self.log.debug(rf"in='{value}', escaped='{fixed}'")
         return fixed
 
     def _unescape_semicolon(self, value: str) -> str:
-        fixed = value.replace("\\\\", "\\").replace("\\;", ";")
+        fixed = value.replace(r"\;", ";")
         self.log.debug(rf"in='{value}', unescaped='{fixed}'")
         return fixed
 
@@ -317,9 +317,10 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         """
         match change:
             case octodns.record.ValueMixin():
-                changeset = {repr(change.value)[1:-1]}
+                changeset = {str(change.value)}
             case octodns.record.ValuesMixin():
-                changeset = {repr(v)[1:-1] for v in change.values}
+                changeset = {str(v) for v in change.values}
+
             case _:
                 raise ValueError
 
