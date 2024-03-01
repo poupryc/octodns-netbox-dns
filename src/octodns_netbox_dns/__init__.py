@@ -61,8 +61,8 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         *args,
         **kwargs,
     ) -> None:
-        """initialize the NetboxDNSSource"""
-        self.log = logging.getLogger(f"NetboxDNSSource[{id}]")
+        """initialize the NetBoxDNSProvider"""
+        self.log = logging.getLogger(f"NetBoxDNSProvider[{id}]")
         self.log.debug(
             f"__init__: {id=}, {url=}, {view=}, {replace_duplicates=}, {make_absolute=}, {disable_ptr=}, {args=}, {kwargs=}"
         )
@@ -92,12 +92,12 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
     def _escape_semicolon(self, value: str) -> str:
         fixed = value.replace(";", "\\;")
-        self.log.debug(f"in='{value}', escaped='{fixed}'")
+        self.log.debug(rf"in='{value}', escaped='{fixed}'")
         return fixed
 
     def _unescape_semicolon(self, value: str) -> str:
         fixed = value.replace("\\\\", "\\").replace("\\;", ";")
-        self.log.debug(f"in='{value}', unescaped='{fixed}'")
+        self.log.debug(rf"in='{value}', unescaped='{fixed}'")
         return fixed
 
     def _get_nb_view(self, view: str | None | Literal[False]) -> dict[str, int | str]:
@@ -223,7 +223,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 self.log.error("invalid record type")
                 raise ValueError
 
-        self.log.debug(f"formatted record value={value}")
+        self.log.debug(rf"formatted record value={value}")
 
         return value  # type:ignore
 
@@ -258,7 +258,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                 "ttl": rcd_ttl,
                 "values": [],
             }
-            self.log.debug(f"working on record={rcd_data} -> {rcd_value}")
+            self.log.debug(rf"working on record={rcd_data}, value={rcd_value}")
 
             try:
                 rcd_rdata = self._format_rdata(rcd_type, rcd_value)
@@ -270,7 +270,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
             records[(rcd_name, rcd_type)]["values"].append(rcd_rdata)
 
-            self.log.debug(f"record data={records[(rcd_name, rcd_type)]}")
+            self.log.debug(rf"record data={records[(rcd_name, rcd_type)]}")
 
         return list(records.values())
 
@@ -285,7 +285,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         @return: true if the zone exists, else false.
         """
-        self.log.info(f"populate -> '{zone.name}', target={target}, lenient={lenient}")
+        self.log.info(f"--> populate '{zone.name}', target={target}, lenient={lenient}")
 
         try:
             records = self._format_nb_records(zone)
@@ -308,13 +308,12 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         return True
 
-    @staticmethod
-    def _format_changeset(change: Any) -> set[str]:
+    def _format_changeset(self, change: Any) -> set[str]:
         """format the changeset
 
         @param change: the raw changes
 
-        @return: the formatted changeset
+        @return: the formatted/escaped changeset
         """
         match change:
             case octodns.record.ValueMixin():
@@ -324,7 +323,11 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
             case _:
                 raise ValueError
 
-        return changeset
+        if change._type not in ["TXT", "SPF"]:
+            return changeset
+
+        escaped_changeset = {self._unescape_semicolon(n) for n in changeset}
+        return escaped_changeset
 
     def _include_change(self, change: octodns.record.change.Change) -> bool:
         """filter out record types which the provider can't create in netbox
@@ -334,15 +337,10 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         @return: false if the change should be discarded, true if it should be kept.
         """
         if change.record._type in ["SOA", "PTR", "NS"]:
-            self.log.debug(f"record not supported as provider, ignoring: {change.record}")
+            self.log.debug(rf"record not supported as provider, ignoring: {change.record}")
             return False
 
         return True
-
-    def _unescape_for_netbox(self, rcd_type: str, value: str) -> str:
-        if rcd_type not in ["TXT", "SPF"]:
-            return value
-        return self._unescape_semicolon(value)
 
     def _apply(self, plan: octodns.provider.plan.Plan) -> None:
         """apply the changes to the NetBox DNS zone.
@@ -351,7 +349,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
         @return: none
         """
-        self.log.debug(f"_apply: zone={plan.desired.name}, changes={len(plan.changes)}")
+        self.log.debug(f"--> _apply zone={plan.desired.name}, changes={len(plan.changes)}")
 
         nb_zone = self._get_nb_zone(plan.desired.name, view=self.nb_view)
 
@@ -362,13 +360,13 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
 
                     new_changeset = self._format_changeset(change.new)
                     for record in new_changeset:
-                        self.log.debug(f"ADD {change.new._type} {rcd_name} {record}")
+                        self.log.debug(rf"ADD {change.new._type} {rcd_name} {record}")
                         self.api.plugins.netbox_dns.records.create(
                             zone=nb_zone.id,
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=self._unescape_for_netbox(change.new._type, record),
+                            value=record,
                             disable_ptr=self.disable_ptr,
                         )
 
@@ -387,7 +385,7 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                             if nb_record.value != record:
                                 continue
                             self.log.debug(
-                                f"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
+                                rf"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
                             )
                             nb_record.delete()
 
@@ -410,23 +408,23 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
                     for nb_record in nb_records:
                         if nb_record.value in to_delete:
                             self.log.debug(
-                                f"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
+                                rf"DELETE {nb_record.type} {nb_record.name} {nb_record.value}"
                             )
                             nb_record.delete()
                         if nb_record.value in to_update:
                             self.log.debug(
-                                f"MODIFY {nb_record.type} {nb_record.name} {nb_record.value}"
+                                rf"MODIFY {nb_record.type} {nb_record.name} {nb_record.value}"
                             )
                             nb_record.ttl = change.new.ttl
                             nb_record.save()
 
                     for record in to_create:
-                        self.log.debug(f"ADD {change.new._type} {rcd_name} {record}")
+                        self.log.debug(rf"ADD {change.new._type} {rcd_name} {record}")
                         nb_record = self.api.plugins.netbox_dns.records.create(
                             zone=nb_zone.id,
                             name=rcd_name,
                             type=change.new._type,
                             ttl=change.new.ttl,
-                            value=self._unescape_for_netbox(change.new._type, record),
+                            value=record,
                             disable_ptr=self.disable_ptr,
                         )
