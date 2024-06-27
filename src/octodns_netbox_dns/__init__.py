@@ -438,5 +438,5 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         """
         query_params = {"status": "active", **self.nb_view}
         zones = self.api.plugins.netbox_dns.zones.filter(**query_params)
-        
+
         return sorted([self._make_absolute(z.name) for z in zones])
