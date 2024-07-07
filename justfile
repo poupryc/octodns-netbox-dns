@@ -77,5 +77,8 @@ sync *args:
 dump *args:
     hatch -v run default:dump {{ args }}
 
+dump2 *args:
+    hatch -v run default:dump2 {{ args }}
+
 validate *args:
     hatch -v run default:validate {{ args }}

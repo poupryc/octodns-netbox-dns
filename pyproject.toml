@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.18", "hatch-regex-commit>=0.0.3"]
+requires = ["hatchling>=1.24", "hatch-regex-commit>=0.0.3"]
 build-backend = "hatchling.build"
 
 [project]
@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 dynamic = ["version"]
 authors = [
     { name = "Jeffrey C. Ollie", email = "" },
-    { name = "Ivan Schaller", email = "ivan@schaller.sh" }
+    { name = "Ivan Schaller", email = "ivan@schaller.sh" },
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -19,10 +19,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = [
-    "pynetbox>=7.2.0",
-    "dnspython>=2.4.2",
-]
+dependencies = ["pynetbox>=7.2.0", "dnspython>=2.4.2"]
 
 [project.urls]
 Homepage = "https://github.com/olofvndrhr/octodns-netbox-dns"
@@ -48,9 +45,9 @@ packages = ["src/octodns_netbox_dns"]
 [tool.hatch.envs.default]
 python = "3.11"
 dependencies = [
-    "pytest==7.4.4",
-    "coverage==7.4.2",
-    "octodns==1.7.0",
+    "pytest==8.2.2",
+    "coverage==7.5.3",
+    "octodns==1.9.1",
     "octodns-spf==0.0.2",
 ]
 
@@ -61,28 +58,23 @@ cov-report = ["- coverage combine", "coverage report", "coverage xml"]
 cov = ["test-cov", "cov-report"]
 
 sync = ["cd dev && octodns-sync --debug --config-file sync.yml --force {args}"]
-dump = ["cd dev && octodns-dump --debug --config-file sync.yml --output-dir output {args} '*' netbox"]
+dump = [
+    "cd dev && octodns-dump --debug --config-file sync.yml --output-dir output {args} '*' netbox",
+]
+dump2 = [
+    "cd dev && octodns-dump --debug --config-file sync2.yml --output-dir output {args} '*' netbox",
+]
 validate = ["cd dev && octodns-validate --debug --config-file sync.yml {args}"]
 
 [tool.hatch.envs.lint]
 python = "3.11"
 detached = true
-dependencies = [
-    "mypy==1.8.0",
-    "ruff==0.2.2",
-]
+dependencies = ["mypy==1.10.0", "ruff==0.4.8"]
 
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --non-interactive --install-types {args:src/octodns_netbox_dns}"
-style = [
-    "ruff check --diff {args:.}",
-    "ruff format --check --diff {args:.}"
-]
-fmt = [
-    "ruff check --fix {args:.}",
-    "ruff format {args:.}",
-    "style"
-]
+style = ["ruff check --diff {args:.}", "ruff format --check --diff {args:.}"]
+fmt = ["ruff check --fix {args:.}", "ruff format {args:.}", "style"]
 all = ["style", "typing"]
 
 ###
@@ -112,7 +104,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
-    "dev"
+    "dev",
 ]
 
 [tool.ruff.lint]
@@ -143,8 +135,18 @@ select = [
     "W",
     "YTT",
 ]
-ignore-init-module-imports = true
-ignore = ["E501", "D103", "D100", "D102", "PLR2004", "D403", "ISC001", "FBT001", "FBT002", "FBT003"]
+ignore = [
+    "E501",
+    "D103",
+    "D100",
+    "D102",
+    "PLR2004",
+    "D403",
+    "ISC001",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+]
 unfixable = ["F401"]
 
 [tool.ruff.format]
@@ -231,7 +233,10 @@ parallel = true
 omit = ["src/octodns_netbox_dns/__about__.py"]
 
 [tool.coverage.paths]
-octodns_netbox_dns = ["src/octodns_netbox_dns", "*/octodns-netbox-dns/src/octodns_netbox_dns"]
+octodns_netbox_dns = [
+    "src/octodns_netbox_dns",
+    "*/octodns-netbox-dns/src/octodns_netbox_dns",
+]
 tests = ["tests", "*/octodns-netbox-dns/tests"]
 
 [tool.coverage.report]
