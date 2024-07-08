@@ -14,7 +14,7 @@ PLUGINS_CONFIG = {
         "zone_nameservers": ["ns1.example.com", "ns2.example.com"],
         "zone_soa_mname": "ns1.example.com",
         "zone_soa_rname": "admin.example.com",
-        "tolerate_underscores_in_hostnames": False,
+        "tolerate_underscores_in_labels": False,
         "tolerate_leading_underscore_types": [
             "TXT",
             "SRV",

@@ -1,6 +1,6 @@
-FROM lscr.io/linuxserver/netbox:3.7.6
+FROM lscr.io/linuxserver/netbox:4.0.6
 
 RUN pip install -U \
     wheel \
     setuptools \
-    netbox-plugin-dns==0.22.8
+    netbox-plugin-dns==1.0.4
