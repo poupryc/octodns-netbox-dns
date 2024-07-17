@@ -9,6 +9,23 @@ on:
 
 jobs:
   check-code:
-    uses: actions/workflows/.gitea/workflows/check_python_hatch.yml@master
-    with:
-      run-tests: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: install hatch
+        run: pip install -U hatch
+
+      - name: test codestyle
+        run: hatch run lint:style
+
+      - name: test typing
+        run: hatch run lint:typing
+
+      - name: run tests
+        run: hatch run default:test
