@@ -19,7 +19,6 @@ show_system_info:
 
 setup:
     asdf install
-    lefthook install
 
 create_venv:
     @echo "creating venv"
