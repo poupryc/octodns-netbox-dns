@@ -75,14 +75,19 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         self.make_absolute = make_absolute
         self.disable_ptr = disable_ptr
 
-    def _make_absolute(self, value: str) -> str:
+    def _make_absolute(self, value: str, force : bool = False) -> str:
         """return dns name with trailing dot to make it absolute
 
         @param value: dns record value
 
+        @param force: when `True`, disregard configuration option `make_absolute`
+
         @return: absolute dns record value
         """
-        if not self.make_absolute or value.endswith("."):
+        if value.endswith("."):
+            return value
+
+        if not (self.make_absolute or force):
             return value
 
         absolute_value = value + "."
@@ -438,5 +443,6 @@ class NetBoxDNSProvider(octodns.provider.base.BaseProvider):
         """
         query_params = {"status": "active", **self.nb_view}
         zones = self.api.plugins.netbox_dns.zones.filter(**query_params)
+        zones = [self._make_absolute(z.name, True) for z in zones]
 
-        return sorted([self._make_absolute(z.name) for z in zones])
+        return sorted(zones)
