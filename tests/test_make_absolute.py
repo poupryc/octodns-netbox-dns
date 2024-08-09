@@ -26,6 +26,7 @@ def test_noop():
 
     assert absolute == "example.com."
 
+
 def test_disabled():
     args = {**DEFAULT_CONFIG, "make_absolute": False}
     nbdns = NetBoxDNSProvider(**args)
@@ -33,6 +34,7 @@ def test_disabled():
     relative = nbdns._make_absolute(rcd, force=False)
 
     assert relative == "example.com"
+
 
 def test_force():
     args = {**DEFAULT_CONFIG, "make_absolute": False}
