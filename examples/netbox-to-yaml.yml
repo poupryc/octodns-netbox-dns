@@ -1,0 +1,33 @@
+manager:
+  max_workers: 2
+  plan_outputs:
+    html:
+      class: octodns.provider.plan.PlanMarkdown
+
+processors:
+  spf:
+    class: octodns_spf.SpfDnsLookupProcessor
+
+providers:
+  config:
+    class: octodns.provider.yaml.YamlProvider
+    directory: ./zones
+    default_ttl: 3600
+    enforce_order: true
+    populate_should_replace: false
+  netbox:
+    class: octodns_netbox_dns.NetBoxDNSProvider
+    url: https://netbox.example.net
+    token: env/NETBOX_API_KEY
+    view: false
+    replace_duplicates: false
+    make_absolute: true
+
+zones:
+  "*":
+    sources:
+      - netbox
+    processors:
+      - spf
+    targets:
+      - config
