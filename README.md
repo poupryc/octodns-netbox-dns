@@ -34,11 +34,12 @@ providers:
 
 ## compatibility
 
-> actively tested on the newest netbox-plugin-dns and netbox versions
+> actively tested on the newest `netbox-plugin-dns` and `netbox` versions
 
 | provider    | [netbox-plugin-dns](https://github.com/peteeckel/netbox-plugin-dns) | [netbox](https://github.com/netbox-community/netbox) |
-|-------------|---------------------------------------------------------------------|------------------------------------------------------|
+| ----------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
 | `>= v0.3.3` | `>=0.21.0`                                                          | `>=3.6.0`                                            |
+| `>= v0.3.6` | `>=1.0.0`                                                           | `>=4.0.0`                                            |
 
 ## install
 
